@@ -191,6 +191,73 @@ kbd {
   font-weight: 700;
 }
 
+.tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip-card {
+  position: absolute;
+  z-index: 60;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  width: max-content;
+  max-width: 240px;
+  transform: translateX(-50%) translateY(4px);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  opacity: 0;
+  padding: 0.45rem 0.55rem;
+  pointer-events: none;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.tooltip-wrap:hover .tooltip-card,
+.tooltip-wrap:focus-within .tooltip-card {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.cookie-banner {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 70;
+  display: grid;
+  max-width: 520px;
+  gap: 0.85rem;
+  padding: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(2, 6, 23, 0.72);
+}
+
+.tour-highlight {
+  position: fixed;
+  z-index: 81;
+  border: 2px solid var(--accent);
+  box-shadow:
+    0 0 0 9999px rgba(2, 6, 23, 0.55),
+    0 0 0 6px rgba(56, 189, 248, 0.14);
+  pointer-events: none;
+}
+
+.tour-card {
+  position: fixed;
+  z-index: 82;
+  width: min(360px, calc(100vw - 2rem));
+  padding: 1rem;
+  box-shadow: var(--shadow);
+}
+
 .sidebar-scroll {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--muted) 50%, transparent) transparent;
@@ -269,6 +336,21 @@ kbd {
 
   .left-sidebar {
     max-height: 42vh;
+  }
+
+  .cookie-banner {
+    right: 0.5rem;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    max-width: none;
+  }
+
+  .tour-card {
+    left: 1rem !important;
+    right: 1rem;
+    top: auto !important;
+    bottom: 1rem;
+    width: auto;
   }
 }
 

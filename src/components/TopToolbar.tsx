@@ -4,6 +4,7 @@ import {
   FileUp,
   HelpCircle,
   Languages,
+  ListChecks,
   Maximize2,
   Moon,
   Redo2,
@@ -19,8 +20,13 @@ import { useImageProcessing } from '../hooks/useImageProcessing';
 import { exportPng } from '../services/exportService';
 import { useEditorStore } from '../store/editorStore';
 import { i18next } from '../i18n';
+import { Tooltip } from './Tooltip';
 
-export function TopToolbar() {
+interface TopToolbarProps {
+  onStartTour: () => void;
+}
+
+export function TopToolbar({ onStartTour }: TopToolbarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
   const { loadFile } = useImageProcessing();
@@ -58,21 +64,26 @@ export function TopToolbar() {
       <div className="flex items-center gap-2">
         <div className="mr-2">
           <h1 className="font-display text-sm font-extrabold leading-4">{t('app.title')}</h1>
-    
+          <p className="text-[11px]" style={{ color: 'var(--muted)' }}>{t('app.subtitle')}</p>
         </div>
-        <button className="editor-button" onClick={() => inputRef.current?.click()} title="Ctrl+O">
-          <FileUp className="h-4 w-4" />
-          {t('app.open')}
-        </button>
-        <button
-          className="editor-button editor-button-primary"
-          disabled={!image}
-          onClick={() => image && void exportPng(layers, image.name).then(() => addToast(t('toast.exported')))}
-          title="Ctrl+S"
-        >
-          <Download className="h-4 w-4" />
-          {t('app.save')}
-        </button>
+        <Tooltip text={t('tooltips.openFile')}>
+          <button className="editor-button" onClick={() => inputRef.current?.click()} title="Ctrl+O" data-tour="open-file">
+            <FileUp className="h-4 w-4" />
+            {t('app.open')}
+          </button>
+        </Tooltip>
+        <Tooltip text={t('tooltips.exportPng')}>
+          <button
+            className="editor-button editor-button-primary"
+            disabled={!image}
+            onClick={() => image && void exportPng(layers, image.name).then(() => addToast(t('toast.exported')))}
+            title="Ctrl+S"
+            data-tour="export-png"
+          >
+            <Download className="h-4 w-4" />
+            {t('app.save')}
+          </button>
+        </Tooltip>
         <input
           ref={inputRef}
           className="hidden"
@@ -112,6 +123,10 @@ export function TopToolbar() {
         </button>
         <button className="editor-button" onClick={() => window.dispatchEvent(new Event('png-grid-actual-size'))}>
           {t('controls.actual')}
+        </button>
+        <button className="editor-button" onClick={onStartTour}>
+          <ListChecks className="h-4 w-4" />
+          {t('tour.button')}
         </button>
         <button className="editor-button" onClick={changeLanguage}>
           <Languages className="h-4 w-4" />

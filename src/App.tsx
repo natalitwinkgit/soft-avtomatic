@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { BottomStatusBar } from './components/BottomStatusBar';
 import { CanvasEditor } from './components/CanvasEditor';
 import { ComparePreview } from './components/ComparePreview';
+import { CookieBanner } from './components/CookieBanner';
 import { HelpModal } from './components/HelpModal';
+import { OnboardingTour } from './components/OnboardingTour';
 import { SelectionTool } from './components/SelectionTool';
 import { ToastViewport } from './components/ToastViewport';
 import { TopToolbar } from './components/TopToolbar';
@@ -95,7 +97,7 @@ function PropertiesPanel() {
   return (
     <section className="editor-panel p-3">
       <h2 className="mb-2 font-display text-sm font-bold">{t('layout.properties')}</h2>
-      <div className="grid gap-2 text-xs font-mono" style={{ color: 'var(--muted)' }}>
+      <div className="grid gap-2 text-xs font-mono" style={{ color: 'var(--muted)' }} data-tour="grid-detector">
         <span>{t('status.image')}: {image ? `${image.trimmedData.width} x ${image.trimmedData.height}` : '-'}</span>
         <span>{t('grid.cell')}: {grid ? `${grid.cellWidth} x ${grid.cellHeight}` : '-'}</span>
         <span>{t('selection.selected', { count: selectedCells.length })}</span>
@@ -104,9 +106,23 @@ function PropertiesPanel() {
   );
 }
 
+function ProductIntroPanel() {
+  const { t } = useTranslation();
+
+  return (
+    <section className="editor-panel p-3">
+      <h2 className="font-display text-sm font-bold">{t('seo.heading')}</h2>
+      <p className="mt-2 text-xs leading-5" style={{ color: 'var(--muted)' }}>
+        {t('seo.description')}
+      </p>
+    </section>
+  );
+}
+
 export function App() {
   const { t } = useTranslation();
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
   const image = useEditorStore((state) => state.image);
   const theme = useEditorStore((state) => state.theme);
   const themeMode = useEditorStore((state) => state.themeMode);
@@ -150,7 +166,7 @@ export function App() {
 
   return (
     <main className="grid h-screen grid-rows-[auto_minmax(0,1fr)_auto]" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      <TopToolbar />
+      <TopToolbar onStartTour={() => setTourOpen(true)} />
 
       <div
         className="app-workspace grid min-h-0 gap-2 p-2"
@@ -189,6 +205,7 @@ export function App() {
             </div>
           ) : (
             <div className="sidebar-scroll grid min-h-0 content-start gap-2 overflow-y-auto overflow-x-hidden p-2">
+              <ProductIntroPanel />
               <PropertiesPanel />
               <ActionHistoryPanel />
             </div>
@@ -211,6 +228,8 @@ export function App() {
 
       <BottomStatusBar />
       <HelpModal />
+      <CookieBanner onShowTour={() => setTourOpen(true)} />
+      <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
       <ToastViewport />
     </main>
   );

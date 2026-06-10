@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { dominantCellColor } from '../services/colorDetectionService';
 import { composeImageData, imageDataToCanvas } from '../utils/canvasUtils';
 import {
@@ -179,6 +180,7 @@ function logCellRectDebug(
 }
 
 export function CanvasEditor() {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -341,7 +343,7 @@ export function CanvasEditor() {
     return (
       <section className="editor-panel flex min-h-96 items-center justify-center">
         <p className="text-sm" style={{ color: 'var(--muted)' }}>
-          Upload a PNG to begin.
+          {t('canvas.empty')}
         </p>
       </section>
     );
@@ -436,10 +438,10 @@ export function CanvasEditor() {
   return (
     <section className="editor-panel p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-semibold">Canvas Editor</h2>
+        <h2 className="font-semibold">{t('layout.canvas')}</h2>
 
         <div className="text-sm" style={{ color: 'var(--muted)' }}>
-          {renderedData.width} x {renderedData.height}px · pixel perfect
+          {renderedData.width} x {renderedData.height}px · {t('canvas.pixelPerfect')}
         </div>
       </div>
 
@@ -447,6 +449,8 @@ export function CanvasEditor() {
         ref={containerRef}
         className="checkerboard h-[calc(100vh-9rem)] overflow-auto border"
         style={{ borderColor: 'var(--border)' }}
+        title={t('tooltips.canvas')}
+        data-tour="canvas-editor"
         onWheel={(event) => {
           if (!containerRef.current) {
             return;

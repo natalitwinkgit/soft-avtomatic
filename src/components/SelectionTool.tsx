@@ -98,11 +98,14 @@ export function SelectionTool() {
   });
 
   return (
-    <section className="editor-panel p-4">
+    <section className="editor-panel p-4" data-tour="cell-selection">
       <div className="mb-3 flex items-center gap-2">
         <MousePointer2 className="h-4 w-4" />
-        <h2 className="font-semibold">Selection</h2>
+        <h2 className="font-semibold">{t('layout.selection')}</h2>
       </div>
+      <p className="mb-3 text-xs leading-5" style={{ color: 'var(--muted)' }}>
+        {t('tooltips.canvas')}
+      </p>
       <div className="mb-3 grid grid-cols-2 gap-2">
         <button
           type="button"
