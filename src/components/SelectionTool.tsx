@@ -3,35 +3,24 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditorStore } from '../store/editorStore';
 import { clearImageData, cloneImageData } from '../utils/canvasUtils';
-import { cellId, cellRect } from '../utils/gridUtils';
+import { cellId, getSafeCellRect } from '../utils/gridUtils';
 
 type Grid = NonNullable<ReturnType<typeof useEditorStore.getState>['grid']>;
 
-function fillCellWhite(
-  imageData: ImageData,
-  grid: Grid,
-  row: number,
-  column: number
-) {
-  const rect = cellRect(grid, row, column);
+function fillCellWhite(imageData: ImageData, grid: Grid, row: number, column: number) {
+  const rect = getSafeCellRect(grid, row, column, imageData.width, imageData.height);
+
+  if (!rect) {
+    return;
+  }
 
   const startX = rect.x;
   const startY = rect.y;
-
   const endX = rect.x + rect.width;
   const endY = rect.y + rect.height;
 
-  for (let y = startY; y < endY; y++) {
-    for (let x = startX; x < endX; x++) {
-      if (
-        x < 0 ||
-        y < 0 ||
-        x >= imageData.width ||
-        y >= imageData.height
-      ) {
-        continue;
-      }
-
+  for (let y = startY; y < endY; y += 1) {
+    for (let x = startX; x < endX; x += 1) {
       const index = (y * imageData.width + x) * 4;
 
       imageData.data[index] = 255;
@@ -41,25 +30,14 @@ function fillCellWhite(
     }
   }
 }
-function fillRectWhite(imageData: ImageData, x: number, y: number, width: number, height: number) {
-  const startX = Math.max(0, Math.floor(x));
-  const startY = Math.max(0, Math.floor(y));
-  const endX = Math.min(imageData.width, Math.ceil(x + width));
-  const endY = Math.min(imageData.height, Math.ceil(y + height));
-
-  for (let nextY = startY; nextY < endY; nextY += 1) {
-    for (let nextX = startX; nextX < endX; nextX += 1) {
-      const index = (nextY * imageData.width + nextX) * 4;
-      imageData.data[index] = 255;
-      imageData.data[index + 1] = 255;
-      imageData.data[index + 2] = 255;
-      imageData.data[index + 3] = 255;
-    }
-  }
-}
 
 function isWhiteCell(imageData: ImageData, grid: Grid, row: number, column: number) {
-  const rect = cellRect(grid, row, column);
+  const rect = getSafeCellRect(grid, row, column, imageData.width, imageData.height);
+
+  if (!rect) {
+    return false;
+  }
+
   const startX = Math.max(0, Math.floor(rect.x + 1));
   const startY = Math.max(0, Math.floor(rect.y + 1));
   const endX = Math.min(imageData.width, Math.ceil(rect.x + rect.width - 1));
@@ -95,7 +73,9 @@ export function SelectionTool() {
   const setActiveTool = useEditorStore((state) => state.setActiveTool);
   const grid = useEditorStore((state) => state.grid);
   const image = useEditorStore((state) => state.image);
-  const editingLayer = useEditorStore((state) => state.layers.find((layer) => layer.id === 'editing'));
+  const editingLayer = useEditorStore((state) =>
+    state.layers.find((layer) => layer.id === 'editing')
+  );
   const updateLayerData = useEditorStore((state) => state.updateLayerData);
   const clearSelection = useEditorStore((state) => state.clearSelection);
   const selectCells = useEditorStore((state) => state.selectCells);
@@ -103,11 +83,7 @@ export function SelectionTool() {
   const toggleGridOverlay = useEditorStore((state) => state.toggleGridOverlay);
   const latest = selectedCells.at(-1);
   const buttonClass = (tool: typeof activeTool) =>
-    `editor-button ${
-      activeTool === tool
-        ? 'editor-button-primary'
-        : ''
-    }`;
+    `editor-button ${activeTool === tool ? 'editor-button-primary' : ''}`;
 
   function fillSelectedWhite() {
     if (!grid || !image || selectedCells.length === 0) {
@@ -115,14 +91,13 @@ export function SelectionTool() {
     }
 
     const base =
-      editingLayer?.imageData ??
-      clearImageData(image.trimmedData.width, image.trimmedData.height);
+      editingLayer?.imageData ?? clearImageData(image.trimmedData.width, image.trimmedData.height);
     const next = cloneImageData(base);
     const cellsToFill = selectedCells;
 
-cellsToFill.forEach((cell) => {
-  fillCellWhite(next, grid, cell.row, cell.column);
-});
+    cellsToFill.forEach((cell) => {
+      fillCellWhite(next, grid, cell.row, cell.column);
+    });
     updateLayerData('editing', next);
     useEditorStore.getState().addToast(t('toast.filled'));
     clearSelection();
@@ -139,8 +114,7 @@ cellsToFill.forEach((cell) => {
     }
 
     const base =
-      editingLayer?.imageData ??
-      clearImageData(image.trimmedData.width, image.trimmedData.height);
+      editingLayer?.imageData ?? clearImageData(image.trimmedData.width, image.trimmedData.height);
     const next = cloneImageData(base);
     const source = editingLayer?.imageData ?? image.trimmedData;
     const whiteCells = new Set<string>();
@@ -159,7 +133,7 @@ cellsToFill.forEach((cell) => {
           continue;
         }
 
-fillCellWhite(next, grid, row, column);     
+        fillCellWhite(next, grid, row, column);
       }
     }
 
@@ -224,12 +198,7 @@ fillCellWhite(next, grid, row, column);
         </button>
       </div>
       <div className="mb-3 grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          className="editor-button"
-          disabled={!grid}
-          onClick={selectWholeGrid}
-        >
+        <button type="button" className="editor-button" disabled={!grid} onClick={selectWholeGrid}>
           <Grid3X3 className="h-4 w-4" />
           {t('selection.wholeGrid')}
         </button>
@@ -253,15 +222,24 @@ fillCellWhite(next, grid, row, column);
       {latest ? (
         <div className="space-y-2 text-sm">
           <div className="grid grid-cols-2 gap-2">
-            <div>{t('selection.row')}: {latest.row + 1}</div>
-            <div>{t('selection.column')}: {latest.column + 1}</div>
+            <div>
+              {t('selection.row')}: {latest.row + 1}
+            </div>
+            <div>
+              {t('selection.column')}: {latest.column + 1}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <span>{t('selection.color')}:</span>
-            <span className="h-5 w-5 border border-slate-300" style={{ background: latest.color }} />
+            <span
+              className="h-5 w-5 border border-slate-300"
+              style={{ background: latest.color }}
+            />
             <span className="font-mono text-xs">{latest.color}</span>
           </div>
-          <p className="text-xs" style={{ color: 'var(--muted)' }}>{t('selection.selected', { count: selectedCells.length })}</p>
+          <p className="text-xs" style={{ color: 'var(--muted)' }}>
+            {t('selection.selected', { count: selectedCells.length })}
+          </p>
           <button
             type="button"
             className="editor-button w-full"

@@ -5,7 +5,6 @@ import type { LoadedImage, ViewMode } from '../types/image.types';
 import type { EditorLayer } from '../types/layer.types';
 import { cloneImageData, clearImageData } from '../utils/canvasUtils';
 import { defaultThresholds } from '../utils/colorUtils';
-import { cellId } from '../utils/gridUtils';
 
 const HISTORY_LIMIT = 50;
 
@@ -235,7 +234,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         if (layer.id !== id || layer.locked || !layer.imageData) {
           return layer;
         }
-        return { ...layer, imageData: clearImageData(layer.imageData.width, layer.imageData.height) };
+        return {
+          ...layer,
+          imageData: clearImageData(layer.imageData.width, layer.imageData.height)
+        };
       })
     })),
   updateLayerData: (id, imageData, record = true) =>
@@ -261,9 +263,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((state) => {
       const map = new Map<string, CellSelection>();
       if (additive) {
-        state.selectedCells.forEach((cell) => map.set(cellId(cell.row, cell.column), cell));
+        state.selectedCells.forEach((cell) => map.set(cell.id, cell));
       }
-      cells.forEach((cell) => map.set(cellId(cell.row, cell.column), cell));
+      cells.forEach((cell) => map.set(cell.id, cell));
       return { selectedCells: [...map.values()] };
     }),
   clearSelection: () => set({ selectedCells: [] }),
