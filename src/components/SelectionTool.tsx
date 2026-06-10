@@ -1,4 +1,4 @@
-import { Eraser, Grid3X3, PaintBucket, Pipette, MousePointer2 } from 'lucide-react';
+import { Grid3X3, PaintBucket, Pipette, MousePointer2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditorStore } from '../store/editorStore';
@@ -79,6 +79,7 @@ export function SelectionTool() {
   const updateLayerData = useEditorStore((state) => state.updateLayerData);
   const clearSelection = useEditorStore((state) => state.clearSelection);
   const selectCells = useEditorStore((state) => state.selectCells);
+  const addActionHistory = useEditorStore((state) => state.addActionHistory);
   const latest = selectedCells.at(-1);
   const buttonClass = (tool: typeof activeTool) =>
     `editor-button ${activeTool === tool ? 'editor-button-primary' : ''}`;
@@ -97,6 +98,7 @@ export function SelectionTool() {
       fillCellWhite(next, grid, cell.row, cell.column);
     });
     updateLayerData('editing', next);
+    addActionHistory('fill-white', cellsToFill, cellsToFill.length);
     useEditorStore.getState().addToast(t('toast.filled'));
     clearSelection();
   }
@@ -105,38 +107,6 @@ export function SelectionTool() {
     window.addEventListener('png-grid-fill-selected-white', fillSelectedWhite);
     return () => window.removeEventListener('png-grid-fill-selected-white', fillSelectedWhite);
   });
-
-  function removeGridEdgesInWhiteCells() {
-    if (!grid || !image) {
-      return;
-    }
-
-    const base =
-      editingLayer?.imageData ?? clearImageData(image.trimmedData.width, image.trimmedData.height);
-    const next = cloneImageData(base);
-    const source = editingLayer?.imageData ?? image.trimmedData;
-    const whiteCells = new Set<string>();
-
-    for (let row = 0; row < grid.rows; row += 1) {
-      for (let column = 0; column < grid.columns; column += 1) {
-        if (isWhiteCell(source, grid, row, column)) {
-          whiteCells.add(cellId(row, column));
-        }
-      }
-    }
-
-    for (let row = 0; row < grid.rows; row += 1) {
-      for (let column = 0; column < grid.columns; column += 1) {
-        if (!whiteCells.has(cellId(row, column))) {
-          continue;
-        }
-
-        fillCellWhite(next, grid, row, column);
-      }
-    }
-
-    updateLayerData('editing', next);
-  }
 
   function selectWholeGrid() {
     if (!grid) {
@@ -246,16 +216,6 @@ export function SelectionTool() {
           >
             <PaintBucket className="h-4 w-4" />
             {t('selection.fillWhite')}
-          </button>
-          <button
-            type="button"
-            className="editor-button w-full"
-            style={{ color: 'var(--danger)' }}
-            disabled={!grid || !image}
-            onClick={removeGridEdgesInWhiteCells}
-          >
-            <Eraser className="h-4 w-4" />
-            {t('selection.removeEdges')}
           </button>
         </div>
       ) : (

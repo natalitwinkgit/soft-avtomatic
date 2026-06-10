@@ -171,6 +171,26 @@ kbd {
   color: var(--muted);
 }
 
+.action-history-item {
+  min-width: 0;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  padding: 0.55rem;
+}
+
+.cell-chip {
+  display: inline-flex;
+  min-height: 20px;
+  align-items: center;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  padding: 0 0.35rem;
+  color: var(--text);
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
 .sidebar-scroll {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--muted) 50%, transparent) transparent;

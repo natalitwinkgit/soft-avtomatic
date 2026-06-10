@@ -59,7 +59,6 @@ export const resources = {
         hideGrid: 'Сховати службову сітку',
         clear: 'Зняти виділення',
         fillWhite: 'Залити #FFFFFF',
-        removeEdges: 'Прибрати грані в білих',
         empty: 'Виділяйте клітинки вручну або піпеткою по кольору.',
         row: 'Рядок',
         column: 'Колонка',
@@ -74,6 +73,20 @@ export const resources = {
         zoomOut: 'Зменшити',
         fit: 'До екрана',
         actual: '100%'
+      },
+      history: {
+        title: 'Історія дій',
+        empty: 'Після роботи з клітинками тут буде детальний журнал.',
+        count: '{{count}} клітинок',
+        actions: {
+          'select-cell': 'Вибрано клітинку',
+          'select-cells': 'Вибрано клітинки',
+          'clear-selection': 'Знято виділення',
+          'fill-white': 'Залито білим',
+          'reset-edits': 'Очищено зміни',
+          undo: 'Скасовано дію',
+          redo: 'Повторено дію'
+        }
       },
       status: {
         cursor: 'Курсор',
@@ -167,7 +180,6 @@ export const resources = {
         hideGrid: 'Hide helper grid',
         clear: 'Clear selection',
         fillWhite: 'Fill #FFFFFF',
-        removeEdges: 'Remove white-cell edges',
         empty: 'Select cells manually or use pipette by color.',
         row: 'Row',
         column: 'Column',
@@ -182,6 +194,20 @@ export const resources = {
         zoomOut: 'Zoom out',
         fit: 'Fit to screen',
         actual: '100%'
+      },
+      history: {
+        title: 'Action History',
+        empty: 'Detailed cell actions will appear here.',
+        count: '{{count}} cells',
+        actions: {
+          'select-cell': 'Selected cell',
+          'select-cells': 'Selected cells',
+          'clear-selection': 'Cleared selection',
+          'fill-white': 'Filled white',
+          'reset-edits': 'Reset edits',
+          undo: 'Undid action',
+          redo: 'Redid action'
+        }
       },
       status: {
         cursor: 'Cursor',

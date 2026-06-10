@@ -10,10 +10,26 @@ const HISTORY_LIMIT = 50;
 
 export type EditorTool = 'select' | 'eyedropper';
 export type ThemeMode = 'system' | 'light' | 'dark';
+export type ActionHistoryType =
+  | 'select-cell'
+  | 'select-cells'
+  | 'clear-selection'
+  | 'fill-white'
+  | 'reset-edits'
+  | 'undo'
+  | 'redo';
 
 interface ToastMessage {
   id: string;
   message: string;
+}
+
+export interface ActionHistoryEntry {
+  id: string;
+  type: ActionHistoryType;
+  cells: CellSelection[];
+  count: number;
+  createdAt: number;
 }
 
 interface Snapshot {
@@ -41,6 +57,7 @@ interface EditorState {
   fullscreen: boolean;
   recentFiles: string[];
   toasts: ToastMessage[];
+  actionHistory: ActionHistoryEntry[];
   past: Snapshot[];
   future: Snapshot[];
   setImage: (image: LoadedImage) => void;
@@ -61,6 +78,7 @@ interface EditorState {
   toggleFullscreen: () => void;
   addToast: (message: string) => void;
   removeToast: (id: string) => void;
+  addActionHistory: (type: ActionHistoryType, cells?: CellSelection[], count?: number) => void;
   addRecentFile: (name: string) => void;
   toggleLayer: (id: string) => void;
   setLayerOpacity: (id: string, opacity: number) => void;
@@ -96,6 +114,20 @@ function withHistory(state: EditorState) {
   };
 }
 
+function actionEntry(
+  type: ActionHistoryType,
+  cells: CellSelection[] = [],
+  count = cells.length
+): ActionHistoryEntry {
+  return {
+    id: crypto.randomUUID(),
+    type,
+    cells: cells.slice(0, 30),
+    count,
+    createdAt: Date.now()
+  };
+}
+
 export const useEditorStore = create<EditorState>((set, get) => ({
   image: null,
   grid: null,
@@ -116,6 +148,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   fullscreen: false,
   recentFiles: JSON.parse(localStorage.getItem('png-grid-recent-files') ?? '[]') as string[],
   toasts: [],
+  actionHistory: [],
   past: [],
   future: [],
 
@@ -158,6 +191,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       layers: [originalLayer, maskLayer, editingLayer],
       selectedCells: [],
       activeLayerId: 'editing',
+      actionHistory: [],
       past: [],
       future: []
     });
@@ -205,6 +239,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   removeToast: (id) =>
     set((state) => ({
       toasts: state.toasts.filter((toast) => toast.id !== id)
+    })),
+  addActionHistory: (type, cells = [], count = cells.length) =>
+    set((state) => ({
+      actionHistory: [actionEntry(type, cells, count), ...state.actionHistory].slice(0, 30)
     })),
   addRecentFile: (name) =>
     set((state) => {
@@ -257,7 +295,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             )
           : [...state.selectedCells, cell]
         : [cell];
-      return { selectedCells };
+      return {
+        selectedCells,
+        actionHistory: [actionEntry('select-cell', [cell], 1), ...state.actionHistory].slice(0, 30)
+      };
     }),
   selectCells: (cells, additive) =>
     set((state) => {
@@ -266,9 +307,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         state.selectedCells.forEach((cell) => map.set(cell.id, cell));
       }
       cells.forEach((cell) => map.set(cell.id, cell));
-      return { selectedCells: [...map.values()] };
+      return {
+        selectedCells: [...map.values()],
+        actionHistory: [actionEntry('select-cells', cells, cells.length), ...state.actionHistory].slice(0, 30)
+      };
     }),
-  clearSelection: () => set({ selectedCells: [] }),
+  clearSelection: () =>
+    set((state) => ({
+      selectedCells: [],
+      actionHistory: state.selectedCells.length
+        ? [actionEntry('clear-selection', state.selectedCells, state.selectedCells.length), ...state.actionHistory].slice(0, 30)
+        : state.actionHistory
+    })),
   undo: () =>
     set((state) => {
       const previous = state.past.at(-1);
@@ -280,7 +330,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         layers: previous.layers.map(cloneLayer),
         selectedCells: [...previous.selectedCells],
         past: state.past.slice(0, -1),
-        future: [snapshot(state), ...state.future].slice(0, HISTORY_LIMIT)
+        future: [snapshot(state), ...state.future].slice(0, HISTORY_LIMIT),
+        actionHistory: [actionEntry('undo', state.selectedCells, state.selectedCells.length), ...state.actionHistory].slice(0, 30)
       };
     }),
   redo: () =>
@@ -294,13 +345,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         layers: next.layers.map(cloneLayer),
         selectedCells: [...next.selectedCells],
         past: [...state.past, snapshot(state)].slice(-HISTORY_LIMIT),
-        future: state.future.slice(1)
+        future: state.future.slice(1),
+        actionHistory: [actionEntry('redo', next.selectedCells, next.selectedCells.length), ...state.actionHistory].slice(0, 30)
       };
     }),
   resetEdits: () => {
     const image = get().image;
     if (image) {
       get().setImage(image);
+      get().addActionHistory('reset-edits');
     }
   }
 }));

@@ -1,4 +1,4 @@
-import { PanelLeftClose, PanelLeftOpen, ScanLine, Upload } from 'lucide-react';
+import { Clock3, PanelLeftClose, PanelLeftOpen, ScanLine, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BottomStatusBar } from './components/BottomStatusBar';
@@ -13,6 +13,61 @@ import { useGridDetection } from './hooks/useGridDetection';
 import { useHotkeys } from './hooks/useHotkeys';
 import { i18next } from './i18n';
 import { useEditorStore } from './store/editorStore';
+
+function formatCell(row: number, column: number) {
+  return `${row + 1}:${column + 1}`;
+}
+
+function ActionHistoryPanel() {
+  const { t } = useTranslation();
+  const actionHistory = useEditorStore((state) => state.actionHistory);
+
+  return (
+    <section className="editor-panel p-3">
+      <div className="mb-3 flex items-center gap-2">
+        <Clock3 className="h-4 w-4" />
+        <h2 className="font-display text-sm font-bold">{t('history.title')}</h2>
+      </div>
+
+      {actionHistory.length ? (
+        <div className="grid gap-2">
+          {actionHistory.map((entry) => {
+            const visibleCells = entry.cells.slice(0, 12);
+            const hiddenCount = Math.max(0, entry.count - visibleCells.length);
+
+            return (
+              <article key={entry.id} className="action-history-item">
+                <div className="flex min-w-0 items-center justify-between gap-2">
+                  <p className="truncate text-xs font-bold">{t(`history.actions.${entry.type}`)}</p>
+                  <time className="shrink-0 text-[10px]" style={{ color: 'var(--muted)' }}>
+                    {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </time>
+                </div>
+                <p className="mt-1 text-[11px]" style={{ color: 'var(--muted)' }}>
+                  {t('history.count', { count: entry.count })}
+                </p>
+                {visibleCells.length ? (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {visibleCells.map((cell) => (
+                      <span key={`${entry.id}-${cell.id}`} className="cell-chip" title={`${t('selection.row')} ${cell.row + 1}, ${t('selection.column')} ${cell.column + 1}`}>
+                        {formatCell(cell.row, cell.column)}
+                      </span>
+                    ))}
+                    {hiddenCount ? <span className="cell-chip">+{hiddenCount}</span> : null}
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-xs leading-5" style={{ color: 'var(--muted)' }}>
+          {t('history.empty')}
+        </p>
+      )}
+    </section>
+  );
+}
 
 function PropertiesPanel() {
   const { t } = useTranslation();
@@ -120,9 +175,14 @@ export function App() {
             </div>
           ) : (
             <div className="sidebar-scroll grid min-h-0 content-start gap-2 overflow-y-auto overflow-x-hidden p-2">
-              <div className="section-kicker">{t('layout.upload')}</div>
-              <ImageUploader />
+              {!image ? (
+                <>
+                  <div className="section-kicker">{t('layout.upload')}</div>
+                  <ImageUploader />
+                </>
+              ) : null}
               <PropertiesPanel />
+              <ActionHistoryPanel />
             </div>
           )}
         </aside>
